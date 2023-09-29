@@ -1,0 +1,49 @@
+name: HTML Verification
+
+on:
+  push:
+    branches:
+      - main # Ubah sesuai dengan nama cabang Anda
+
+jobs:
+  verify-html:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout kode sumber
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: 14 # Ubah versi Node.js sesuai kebutuhan Anda
+
+    - name: Install dependensi
+      run: npm install # Jika Anda memiliki dependensi yang perlu diinstal
+
+    - name: Verifikasi berkas HTML
+      run: |
+        find . -name "*.html" | while read file; do
+          if ! npx html-validator-cli "$file"; then
+            echo "Gagal memvalidasi $file"
+            exit 1
+          fi
+        done
+
+    - name: Menyimpan laporan validasi ke file
+      run: |
+        find . -name "*.html" | while read file; do
+          npx html-validator-cli "$file" --format=gnu > "$file.validation"
+        done
+
+    - name: Menyimpan laporan validasi sebagai artefak
+      uses: actions/upload-artifact@v2
+      with:
+        name: html-validation-reports
+        path: ./*.html.validation
+
+    - name: Tampilkan laporan validasi
+      run: |
+        find . -name "*.html.validation" | while read report; do
+          cat "$report"
+        done
